@@ -510,6 +510,10 @@
     if (n === null || n === undefined || isNaN(n)) return "—";
     return "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
+  function fmtUSD(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    return "US$ " + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   function fmtPct(n) {
     return (n * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%";
   }
@@ -970,6 +974,7 @@
     if (!op) return "";
     var s = computeOperation(op);
     var pct = s.itemsTotal ? Math.round((s.itemsQuoted / s.itemsTotal) * 100) : 0;
+    var rate = Number(op.dollarRate) || 0;
     return '<div class="summary-block">' +
       '<div class="summary-label">Progresso da cotação</div>' +
       '<div class="progress-big-track"><div class="progress-big-fill" style="width:' + pct + '%"></div></div>' +
@@ -994,6 +999,9 @@
       '<div class="lbl">Preço de venda</div>' +
       '<div class="amt mono">' + fmtBRL(s.precoVenda) + '</div>' +
       '<div class="per-pax">' + fmtBRL(s.precoPorPax) + ' por participante</div>' +
+      (rate ? '<div class="ledger-divider" style="border-color:rgba(255,255,255,0.15);margin:10px 0 8px;"></div>' +
+        '<div class="per-pax">' + fmtUSD(s.precoVenda / rate) + ' total <span style="opacity:0.6;">(câmbio ' + rate.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + ')</span></div>' +
+        '<div class="per-pax">' + fmtUSD(s.precoPorPax / rate) + ' por participante</div>' : '') +
       '</div></div>';
   }
 
