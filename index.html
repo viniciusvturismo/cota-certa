@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<title>Cota Certa</title>
+<title>Grupos VTurismo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -801,22 +801,22 @@
   function buildResearchPrompt(op, cat, item) {
     var siteUrl = window.location.href;
     var header = 'Operação: "' + op.name + '" (cliente: ' + (op.client || "—") + ', ' + op.pax + ' participantes)\n' +
-      'Cota Certa: ' + siteUrl + '\n' +
+      'Grupos VTurismo: ' + siteUrl + '\n' +
       'Categoria: ' + cat.name + ' · Item: "' + item.name + '" (id do item: ' + item.id + ')\n';
     if (item.kind === "voo") {
       return header +
-        'Isto é um item de AÉREO — antes de preencher qualquer coisa no Cota Certa, faça a análise aqui no chat primeiro:\n' +
+        'Isto é um item de AÉREO — antes de preencher qualquer coisa no Grupos VTurismo, faça a análise aqui no chat primeiro:\n' +
         '1. Pesquise as opções de voo cabíveis (rota, datas e nº de passageiros da operação acima; use o link/companhia abaixo como ponto de partida se houver).\n' +
         '2. Traga um comparativo (companhia, conexões, horários, preço por pessoa) como já fizemos antes para o BRUSA Volleyball.\n' +
-        '3. NÃO atualize o Cota Certa ainda — espere eu escolher a opção.\n' +
-        '4. Só depois que eu confirmar qual opção, você preenche os trechos e as tarifas desse item no Cota Certa (o site é editado ao vivo — as mudanças aparecem sozinhas pra quem estiver com a página aberta).\n' +
+        '3. NÃO atualize o Grupos VTurismo ainda — espere eu escolher a opção.\n' +
+        '4. Só depois que eu confirmar qual opção, você preenche os trechos e as tarifas desse item no Grupos VTurismo (o site é editado ao vivo — as mudanças aparecem sozinhas pra quem estiver com a página aberta).\n' +
         (item.supplierUrl ? "Link de referência: " + item.supplierUrl + "\n" : "") +
         (item.note ? "Observações já registradas: " + item.note + "\n" : "");
     }
     return header +
       'Fornecedor: ' + (item.supplier || "(sem nome definido)") + (item.supplierUrl ? " — " + item.supplierUrl : "") + '\n' +
       'Use a extensão Claude em Chrome (já logado) para abrir o link acima, encontrar a cotação/condições atuais para este item, e me mostrar o que encontrou.\n' +
-      'Depois de eu confirmar, atualize esse item no Cota Certa (mesmo link acima) com o valor encontrado e marque como cotado.\n' +
+      'Depois de eu confirmar, atualize esse item no Grupos VTurismo (mesmo link acima) com o valor encontrado e marque como cotado.\n' +
       (item.note ? "Observações já registradas: " + item.note + "\n" : "");
   }
 
@@ -1009,7 +1009,7 @@
     var app = document.getElementById("app");
     app.innerHTML =
       '<div class="shell">' +
-      '<div class="topbar"><div class="brandmark"><div class="glyph">C</div><div class="word">Cota Certa</div><div class="tag">VTurismo · precificação de grupos</div></div>' + connBadgeHTML() + '</div>' +
+      '<div class="topbar"><div class="brandmark"><div class="glyph">G</div><div class="word">Grupos VTurismo</div><div class="tag">precificação de grupos</div></div>' + connBadgeHTML() + '</div>' +
       '<div class="sidebar" id="sidebar">' + renderSidebar() + '</div>' +
       '<div class="main" id="main">' + renderMain() + '</div>' +
       '<div class="summary-col' + (local.summaryOpenMobile ? " mobile-open" : "") + '" id="summary">' + renderSummary() + '</div>' +
