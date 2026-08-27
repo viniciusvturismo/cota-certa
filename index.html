@@ -186,6 +186,12 @@
 
   /* ---------- main ---------- */
   .main { padding: 26px 30px 60px; overflow-y: auto; }
+  .hint-banner {
+    display: flex; align-items: flex-start; gap: 12px; background: var(--accent-soft);
+    border: 1px solid var(--accent); border-radius: var(--radius-m); padding: 12px 14px; margin-bottom: 18px;
+  }
+  .hint-banner-text { flex: 1; font-size: 13px; line-height: 1.55; color: var(--ink); }
+  .hint-banner .icon-btn { flex-shrink: 0; background: transparent; border-color: transparent; }
   .op-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 22px; flex-wrap: wrap; }
   .op-title-input {
     font-family: "Fraunces", serif; font-weight: 600; font-size: 27px; color: var(--brand-strong);
@@ -230,7 +236,7 @@
 
   .item-row {
     display: grid;
-    grid-template-columns: 22px minmax(0,1.25fr) minmax(0,0.8fr) 96px 60px 76px 108px 52px;
+    grid-template-columns: 22px minmax(0,1.25fr) minmax(0,0.8fr) 118px 108px 52px;
     align-items: center; gap: 7px;
     padding: 10px 18px; border-bottom: 1px solid var(--border);
   }
@@ -250,6 +256,10 @@
     .item-note { margin-left: 0; }
   }
 
+  .kind-badge {
+    font-size: 11px; color: var(--ink-faint); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; padding: 0 2px;
+  }
   .kind-select {
     border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-muted);
     border-radius: 6px; font-size: 11px; padding: 5px 3px; width: 100%;
@@ -462,7 +472,7 @@
   var STATE = JSON.parse(STATE_EL.textContent);
 
   var LOCAL_KEY = "cotacerta_ui_v1";
-  var local = { activeOperationId: STATE.operations[0] ? STATE.operations[0].id : null, collapsed: {}, expandedItems: {}, summaryOpenMobile: false };
+  var local = { activeOperationId: STATE.operations[0] ? STATE.operations[0].id : null, collapsed: {}, expandedItems: {}, summaryOpenMobile: false, hintDismissed: false };
   try {
     var savedLocal = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null");
     if (savedLocal) local = Object.assign(local, savedLocal);
@@ -866,7 +876,19 @@
       valueCellHTML = '<div class="value-computed mono" title="Calculado a partir do detalhamento">' + fmtMoney(derivedValue(it), it.currency) + (it.altOnly ? ' <span class="alt-badge">ALT</span>' : '') + '</div>';
     }
     var detailHTML = "";
-    detailHTML += '<div class="detail-block compare-block">' +
+    detailHTML += '<div class="detail-block"><div class="detail-block-head"><span>Tipo, moeda e unidade</span></div>' +
+      '<div class="field-grid" style="margin-top:8px;">' +
+      '<div class="field-row"><label>Tipo de item</label><select class="kind-select" data-field="kind" ' + dis + '>' + kindOptionsHTML(kind) + '</select></div>' +
+      '<div class="field-row"><label>Moeda</label><select class="currency-select" data-field="currency" ' + dis + '>' +
+      '<option value="BRL"' + (it.currency === "BRL" ? " selected" : "") + '>BRL</option>' +
+      '<option value="USD"' + (it.currency === "USD" ? " selected" : "") + '>USD</option>' +
+      '</select></div>' +
+      '<div class="field-row"><label>Unidade</label><select class="unit-select" data-field="unit" ' + dis + '>' +
+      '<option value="total"' + (it.unit === "total" ? " selected" : "") + '>total</option>' +
+      '<option value="pax"' + (it.unit === "pax" ? " selected" : "") + '>por pax</option>' +
+      '</select></div>' +
+      '</div></div>' +
+      '<div class="detail-block compare-block">' +
       '<label class="compare-toggle"><input type="checkbox" class="alt-checkbox" data-field="altOnly" ' + (it.altOnly ? "checked" : "") + ' ' + dis + ' /> ' +
       '<span>É uma <strong>opção alternativa</strong> em comparação — não soma no orçamento até ser escolhida</span></label>' +
       '</div>' +
@@ -880,19 +902,12 @@
     else if (kindDef.fields) detailHTML += fieldsFormHTML(it, kindDef, dis);
     detailHTML += '<div class="detail-block"><label class="note-label">Observações</label><textarea class="note-input" data-field="note" ' + dis + ' placeholder="Anotações sobre esta cotação...">' + esc(it.note) + '</textarea></div>';
 
+    var kindBadgeText = kindDef.label + (it.currency === "USD" ? " · USD" : "") + (it.unit === "pax" ? " · por pax" : "");
     return '<div class="item-row' + (it.altOnly ? " alt-option" : "") + '" data-item="' + it.id + '" data-cat="' + cat.id + '">' +
       '<input type="checkbox" class="chk" ' + (it.quoted ? "checked" : "") + " " + dis + ' data-action="toggle-quoted" title="Cotação confirmada" />' +
       '<input class="item-name-input" value="' + esc(it.name) + '" placeholder="Nome do item" title="' + esc(it.name) + '" data-field="name" ' + dis + ' />' +
       '<input class="item-supplier-input" value="' + esc(it.supplier) + '" placeholder="Fornecedor" title="' + esc(it.supplier) + '" data-field="supplier" ' + dis + ' />' +
-      '<select class="kind-select" data-field="kind" ' + dis + '>' + kindOptionsHTML(kind) + '</select>' +
-      '<select class="currency-select" data-field="currency" ' + dis + '>' +
-      '<option value="BRL"' + (it.currency === "BRL" ? " selected" : "") + '>BRL</option>' +
-      '<option value="USD"' + (it.currency === "USD" ? " selected" : "") + '>USD</option>' +
-      '</select>' +
-      '<select class="unit-select" data-field="unit" ' + dis + '>' +
-      '<option value="total"' + (it.unit === "total" ? " selected" : "") + '>total</option>' +
-      '<option value="pax"' + (it.unit === "pax" ? " selected" : "") + '>por pax</option>' +
-      '</select>' +
+      '<span class="kind-badge" title="Clique em ▾ para mudar tipo/moeda/unidade">' + esc(kindBadgeText) + '</span>' +
       valueCellHTML +
       '<div class="row-actions">' +
       '<button class="expand-btn' + (expanded ? " open" : "") + '" data-action="toggle-expand" title="Detalhar">▾</button>' +
@@ -928,7 +943,15 @@
     var op = getActiveOp();
     if (!op) return '<div class="empty-state"><div class="glyph">🧾</div>Nenhuma operação ainda. Crie uma no menu ao lado.</div>';
     var catsHTML = op.categories.map(function (c) { return categoryHTML(op, c); }).join("");
+    var hintHTML = local.hintDismissed ? "" :
+      '<div class="hint-banner" id="hint-banner">' +
+      '<div class="hint-banner-text"><strong>Comece por aqui:</strong> marque ✓ os itens que já têm uma cotação real confirmada — isso entra no total automaticamente. ' +
+      'Linhas cinzas com a marca <span class="alt-badge" style="margin-left:0;">ALT</span> são opções alternativas em comparação e não somam no orçamento. ' +
+      'Clique na seta ▾ de qualquer item pra ver detalhes, trocar tipo/moeda/unidade ou anotar observações.</div>' +
+      '<button class="icon-btn" id="btn-dismiss-hint" title="Não mostrar de novo">×</button>' +
+      '</div>';
     return '<div class="mobile-summary-toggle" id="btn-toggle-summary">📊 Ver resumo & precificação</div>' +
+      hintHTML +
       '<div class="op-header">' +
       '<div><input class="op-title-input display" value="' + esc(op.name) + '" data-field="op-name" ' + (readOnly ? "disabled" : "") + ' />' +
       '<div class="op-meta-row">' +
@@ -1016,6 +1039,13 @@
     var main = document.getElementById("main");
     var op = getActiveOp();
     if (!op) return;
+
+    var dismissHintBtn = document.getElementById("btn-dismiss-hint");
+    if (dismissHintBtn) dismissHintBtn.addEventListener("click", function () {
+      local.hintDismissed = true;
+      saveLocalUI();
+      render();
+    });
 
     var opNameInput = main.querySelector('[data-field="op-name"]');
     if (opNameInput) opNameInput.addEventListener("input", function () { op.name = this.value; scheduleSave(); render_sidebar_only(); });
