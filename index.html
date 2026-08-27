@@ -657,14 +657,18 @@
     }
   }
 
+  function loadLocalState() {
+    try {
+      var saved = JSON.parse(localStorage.getItem("cotacerta_state_v1") || "null");
+      if (saved) STATE = saved;
+    } catch (e) {}
+  }
+
   async function initConn() {
     var fb = await getFirebaseBridge();
     if (!fb) {
       connMode = "local";
-      try {
-        var saved = JSON.parse(localStorage.getItem("cotacerta_state_v1") || "null");
-        if (saved) STATE = saved;
-      } catch (e) {}
+      loadLocalState();
       render();
       return;
     }
@@ -682,6 +686,7 @@
       }
     }, function () {
       connMode = "local";
+      loadLocalState();
       showToast("Sem conexão com o banco — salvo só neste navegador.", true);
       render();
     });
