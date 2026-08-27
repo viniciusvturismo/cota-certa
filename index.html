@@ -1250,6 +1250,10 @@
 
   function updateLiveTotalsOnly() {
     var summary = document.getElementById("summary");
+    var active = document.activeElement;
+    var activeField = (active && summary && summary.contains(active) && active.hasAttribute("data-field")) ? active.getAttribute("data-field") : null;
+    var selStart = (activeField && typeof active.selectionStart === "number") ? active.selectionStart : null;
+    var selEnd = (activeField && typeof active.selectionEnd === "number") ? active.selectionEnd : null;
     if (summary) summary.innerHTML = renderSummary();
     render_sidebar_only();
     var mainCats = document.querySelectorAll(".category-subtotal");
@@ -1260,6 +1264,15 @@
       });
     }
     wireEventsSummaryOnly();
+    if (activeField) {
+      var restored = summary.querySelector('[data-field="' + activeField + '"]');
+      if (restored) {
+        restored.focus();
+        if (selStart !== null && restored.setSelectionRange) {
+          try { restored.setSelectionRange(selStart, selEnd); } catch (e) {}
+        }
+      }
+    }
   }
   function wireEventsSummaryOnly() {
     var op = getActiveOp();
