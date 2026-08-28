@@ -325,6 +325,11 @@
   .compare-block { background: var(--pending-bg); border-radius: 10px; padding: 10px 12px; margin: -2px 0 2px; }
   .compare-toggle { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--ink); cursor: pointer; }
   .compare-toggle input { margin-top: 2px; }
+  .fixed-block { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin: -2px 0 2px; }
+  .fixed-badge {
+    display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; margin-left: 5px; vertical-align: middle;
+  }
   .research-block { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin: -2px 0 2px; }
   .research-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .supplier-url-input {
@@ -601,12 +606,13 @@
   }
 
   function computeOperation(op) {
-    var A = 0, itemsTotal = 0, itemsQuoted = 0;
+    var A = 0, fixedTotal = 0, itemsTotal = 0, itemsQuoted = 0;
     op.categories.forEach(function (cat) {
       cat.items.forEach(function (it) {
         itemsTotal++;
         if (it.quoted) itemsQuoted++;
-        A += itemValueBRL(it, op.pax, op.dollarRate);
+        var v = itemValueBRL(it, op.pax, op.dollarRate);
+        if (it.fixedNoMarkup) fixedTotal += v; else A += v;
       });
     });
     var markup = A * (Number(op.markupPct) || 0);
@@ -614,13 +620,14 @@
     var mimos = (Number(op.pax) || 0) * (Number(op.giftPerPax) || 0);
     var subtotalAntes = A + markup + contingencia + mimos;
     var tax = Number(op.taxPct) || 0;
-    var precoVenda = tax < 1 ? subtotalAntes / (1 - tax) : subtotalAntes;
-    var imposto = precoVenda - subtotalAntes;
+    var precoVendaBase = tax < 1 ? subtotalAntes / (1 - tax) : subtotalAntes;
+    var imposto = precoVendaBase - subtotalAntes;
+    var precoVenda = precoVendaBase + fixedTotal;
     var precoPorPax = op.pax ? precoVenda / op.pax : 0;
     var avistaPct = Number(op.avistaDiscountPct) || 0;
-    var precoAvista = precoVenda * (1 - avistaPct);
+    var precoAvista = precoVendaBase * (1 - avistaPct) + fixedTotal;
     var precoAvistaPorPax = op.pax ? precoAvista / op.pax : 0;
-    return { A: A, markup: markup, contingencia: contingencia, mimos: mimos, subtotalAntes: subtotalAntes, imposto: imposto, precoVenda: precoVenda, precoPorPax: precoPorPax, precoAvista: precoAvista, precoAvistaPorPax: precoAvistaPorPax, itemsTotal: itemsTotal, itemsQuoted: itemsQuoted };
+    return { A: A, fixedTotal: fixedTotal, markup: markup, contingencia: contingencia, mimos: mimos, subtotalAntes: subtotalAntes, imposto: imposto, precoVenda: precoVenda, precoPorPax: precoPorPax, precoAvista: precoAvista, precoAvistaPorPax: precoAvistaPorPax, itemsTotal: itemsTotal, itemsQuoted: itemsQuoted };
   }
 
   function categorySubtotal(cat, op) {
@@ -884,9 +891,9 @@
     var dis = readOnly ? "disabled" : "";
     var valueCellHTML;
     if (kind === "simples") {
-      valueCellHTML = '<div class="value-wrap"><input class="value-input" type="number" step="0.01" value="' + (it.value === null || it.value === undefined ? "" : it.value) + '" placeholder="0,00" data-field="value" ' + dis + ' />' + (it.altOnly ? '<span class="alt-badge">ALT</span>' : '') + '</div>';
+      valueCellHTML = '<div class="value-wrap"><input class="value-input" type="number" step="0.01" value="' + (it.value === null || it.value === undefined ? "" : it.value) + '" placeholder="0,00" data-field="value" ' + dis + ' />' + (it.altOnly ? '<span class="alt-badge">ALT</span>' : '') + (it.fixedNoMarkup ? '<span class="fixed-badge">FIXO</span>' : '') + '</div>';
     } else {
-      valueCellHTML = '<div class="value-computed mono" title="Calculado a partir do detalhamento">' + fmtMoney(derivedValue(it), it.currency) + (it.altOnly ? ' <span class="alt-badge">ALT</span>' : '') + '</div>';
+      valueCellHTML = '<div class="value-computed mono" title="Calculado a partir do detalhamento">' + fmtMoney(derivedValue(it), it.currency) + (it.altOnly ? ' <span class="alt-badge">ALT</span>' : '') + (it.fixedNoMarkup ? ' <span class="fixed-badge">FIXO</span>' : '') + '</div>';
     }
     var detailHTML = "";
     detailHTML += '<div class="detail-block"><div class="detail-block-head"><span>Tipo, moeda e unidade</span></div>' +
@@ -904,6 +911,10 @@
       '<div class="detail-block compare-block">' +
       '<label class="compare-toggle"><input type="checkbox" class="alt-checkbox" data-field="altOnly" ' + (it.altOnly ? "checked" : "") + ' ' + dis + ' /> ' +
       '<span>É uma <strong>opção alternativa</strong> em comparação — não soma no orçamento até ser escolhida</span></label>' +
+      '</div>' +
+      '<div class="detail-block fixed-block">' +
+      '<label class="compare-toggle"><input type="checkbox" class="fixed-checkbox" data-field="fixedNoMarkup" ' + (it.fixedNoMarkup ? "checked" : "") + ' ' + dis + ' /> ' +
+      '<span><strong>Valor fixo</strong> — repassado sem markup, contingência ou imposto, e sem desconto à vista (ex.: reembolso a terceiros)</span></label>' +
       '</div>' +
       '<div class="detail-block research-block">' +
       '<label class="note-label">Link do fornecedor (opcional)</label>' +
@@ -1005,6 +1016,7 @@
       '<div class="ledger-row muted"><span>+ Mimos (' + op.pax + ' × ' + fmtBRL(op.giftPerPax) + ')</span><span class="val">' + fmtBRL(s.mimos) + '</span></div>' +
       '<div class="ledger-divider"></div>' +
       '<div class="ledger-row muted"><span>+ Imposto (gross-up)</span><span class="val">' + fmtBRL(s.imposto) + '</span></div>' +
+      (s.fixedTotal ? '<div class="ledger-row muted"><span>+ Valor fixo (sem markup/contingência/imposto)</span><span class="val">' + fmtBRL(s.fixedTotal) + '</span></div>' : '') +
       '<div class="ledger-total">' +
       '<div class="lbl">Preço parcelado (markup cobre custo de parcelamento)</div>' +
       '<div class="amt mono">' + fmtBRL(s.precoVenda) + '</div>' +
@@ -1161,6 +1173,9 @@
 
       var altChk = wrap.querySelector('[data-field="altOnly"]');
       if (altChk) altChk.addEventListener("change", function () { item.altOnly = this.checked; scheduleSave(true); render(); });
+
+      var fixedChk = wrap.querySelector('[data-field="fixedNoMarkup"]');
+      if (fixedChk) fixedChk.addEventListener("change", function () { item.fixedNoMarkup = this.checked; scheduleSave(true); render(); });
 
       var urlInput = wrap.querySelector('[data-field="supplierUrl"]');
       if (urlInput) urlInput.addEventListener("input", function () { item.supplierUrl = this.value; scheduleSave(); });
